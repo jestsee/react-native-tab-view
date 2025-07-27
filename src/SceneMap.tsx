@@ -21,7 +21,7 @@ export function SceneMap<T>(scenes: { [key: string]: React.ComponentType<T> }) {
   return ({ route, jumpTo, position }: SceneProps) => (
     <SceneComponent
       key={route.key}
-      component={scenes[route.key]}
+      component={scenes[route.key] as any}
       route={route}
       jumpTo={jumpTo}
       position={position}

@@ -1,6 +1,5 @@
-import * as React from 'react';
+import * as React from "react";
 import {
-  Animated,
   type LayoutChangeEvent,
   Platform,
   type PressableAndroidRippleConfig,
@@ -8,15 +7,20 @@ import {
   StyleSheet,
   View,
   type ViewStyle,
-} from 'react-native';
-import useLatestCallback from 'use-latest-callback';
+} from "react-native";
+import useLatestCallback from "use-latest-callback";
 
-import { PlatformPressable } from './PlatformPressable';
-import { TabBarItemLabel } from './TabBarItemLabel';
-import type { NavigationState, Route, TabDescriptor } from './types';
+import { PlatformPressable } from "./PlatformPressable";
+import { TabBarItemLabel } from "./TabBarItemLabel";
+import type { NavigationState, Route, TabDescriptor } from "./types";
+import Animated, {
+  interpolate,
+  SharedValue,
+  useDerivedValue,
+} from "react-native-reanimated";
 
 export type Props<T extends Route> = TabDescriptor<T> & {
-  position: Animated.AnimatedInterpolation<number>;
+  position: SharedValue<number>;
   route: T;
   navigationState: NavigationState<T>;
   activeColor?: string;
@@ -31,52 +35,18 @@ export type Props<T extends Route> = TabDescriptor<T> & {
   android_ripple?: PressableAndroidRippleConfig;
 };
 
-const DEFAULT_ACTIVE_COLOR = 'rgba(255, 255, 255, 1)';
-const DEFAULT_INACTIVE_COLOR = 'rgba(255, 255, 255, 0.7)';
+const DEFAULT_ACTIVE_COLOR = "rgba(255, 255, 255, 1)";
+const DEFAULT_INACTIVE_COLOR = "rgba(255, 255, 255, 0.7)";
 const ICON_SIZE = 24;
-
-const getActiveOpacity = (
-  position: Animated.AnimatedInterpolation<number>,
-  routesLength: number,
-  tabIndex: number
-) => {
-  if (routesLength > 1) {
-    const inputRange = Array.from({ length: routesLength }, (_, i) => i);
-
-    return position.interpolate({
-      inputRange,
-      outputRange: inputRange.map((i) => (i === tabIndex ? 1 : 0)),
-    });
-  } else {
-    return 1;
-  }
-};
-
-const getInactiveOpacity = (
-  position: Animated.AnimatedInterpolation<number>,
-  routesLength: number,
-  tabIndex: number
-) => {
-  if (routesLength > 1) {
-    const inputRange = Array.from({ length: routesLength }, (_, i) => i);
-
-    return position.interpolate({
-      inputRange,
-      outputRange: inputRange.map((i: number) => (i === tabIndex ? 0 : 1)),
-    });
-  } else {
-    return 0;
-  }
-};
 
 type TabBarItemInternalProps<T extends Route> = Omit<
   Props<T>,
-  | 'navigationState'
-  | 'getAccessibilityLabel'
-  | 'getLabelText'
-  | 'getTestID'
-  | 'getAccessible'
-  | 'options'
+  | "navigationState"
+  | "getAccessibilityLabel"
+  | "getLabelText"
+  | "getTestID"
+  | "getAccessible"
+  | "options"
 > & {
   isFocused: boolean;
   index: number;
@@ -117,18 +87,35 @@ const TabBarItemInternal = <T extends Route>({
   const activeColor =
     activeColorCustom !== undefined
       ? activeColorCustom
-      : typeof labelColorFromStyle === 'string'
-        ? labelColorFromStyle
-        : DEFAULT_ACTIVE_COLOR;
+      : typeof labelColorFromStyle === "string"
+      ? labelColorFromStyle
+      : DEFAULT_ACTIVE_COLOR;
   const inactiveColor =
     inactiveColorCustom !== undefined
       ? inactiveColorCustom
-      : typeof labelColorFromStyle === 'string'
-        ? labelColorFromStyle
-        : DEFAULT_INACTIVE_COLOR;
+      : typeof labelColorFromStyle === "string"
+      ? labelColorFromStyle
+      : DEFAULT_INACTIVE_COLOR;
 
-  const activeOpacity = getActiveOpacity(position, routesLength, tabIndex);
-  const inactiveOpacity = getInactiveOpacity(position, routesLength, tabIndex);
+  // const activeOpacity = getActiveOpacity(position, routesLength, tabIndex);
+  const activeOpacity = useDerivedValue(() => {
+    if (routesLength <= 1) return 1;
+
+    const inputRange = Array.from({ length: routesLength }, (_, i) => i);
+    const outputRange = inputRange.map((i) => (i === tabIndex ? 1 : 0));
+
+    return interpolate(position.value, inputRange, outputRange, "clamp");
+  });
+
+  // const inactiveOpacity = getInactiveOpacity(position, routesLength, tabIndex);
+  const inactiveOpacity = useDerivedValue(() => {
+    if (routesLength <= 1) return 0;
+
+    const inputRange = Array.from({ length: routesLength }, (_, i) => i);
+    const outputRange = inputRange.map((i) => (i === tabIndex ? 0 : 1));
+
+    return interpolate(position.value, inputRange, outputRange, "clamp");
+  });
 
   const icon = React.useMemo(() => {
     if (!customIcon) {
@@ -209,7 +196,7 @@ const TabBarItemInternal = <T extends Route>({
     : { width: defaultTabWidth };
 
   const ariaLabel =
-    typeof accessibilityLabel !== 'undefined' ? accessibilityLabel : labelText;
+    typeof accessibilityLabel !== "undefined" ? accessibilityLabel : labelText;
 
   return (
     <PlatformPressable
@@ -282,20 +269,20 @@ const styles = StyleSheet.create({
   },
   item: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 10,
     minHeight: 48,
   },
   badge: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     end: 0,
   },
   pressable: {
     // The label is not pressable on Windows
     // Adding backgroundColor: 'transparent' seems to fix it
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     ...Platform.select({
       // Roundness for iPad hover effect
       ios: { borderRadius: 10 },

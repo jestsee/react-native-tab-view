@@ -1,6 +1,7 @@
-import React from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
-import { Animated, StyleSheet } from 'react-native';
+import React from "react";
+import type { StyleProp, ViewStyle } from "react-native";
+import { StyleSheet } from "react-native";
+import Animated from "react-native-reanimated";
 
 interface TabBarItemLabelProps {
   color: string;
@@ -30,13 +31,13 @@ export const TabBarItemLabel = React.memo(
   }
 );
 
-TabBarItemLabel.displayName = 'TabBarItemLabel';
+TabBarItemLabel.displayName = "TabBarItemLabel";
 
 const styles = StyleSheet.create({
   label: {
     margin: 4,
     fontSize: 14,
-    fontWeight: '500',
-    backgroundColor: 'transparent',
+    fontWeight: "500",
+    backgroundColor: "transparent",
   },
 });

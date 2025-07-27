@@ -1,14 +1,13 @@
-import * as React from 'react';
+import * as React from "react";
 import {
-  Animated,
   type GestureResponderEvent,
   Keyboard,
   PanResponder,
   type PanResponderGestureState,
   StyleSheet,
   View,
-} from 'react-native';
-import useLatestCallback from 'use-latest-callback';
+} from "react-native";
+import useLatestCallback from "use-latest-callback";
 
 import type {
   EventEmitterProps,
@@ -17,8 +16,16 @@ import type {
   NavigationState,
   PagerProps,
   Route,
-} from './types';
-import { useAnimatedValue } from './useAnimatedValue';
+} from "./types";
+import Animated, {
+  cancelAnimation,
+  interpolate,
+  runOnJS,
+  SharedValue,
+  useDerivedValue,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 type Props<T extends Route> = PagerProps & {
   layout: Layout;
@@ -29,7 +36,7 @@ type Props<T extends Route> = PagerProps & {
     props: EventEmitterProps & {
       // Animated value which represents the state of current index
       // It can include fractional digits as it represents the intermediate value
-      position: Animated.AnimatedInterpolation<number>;
+      position: SharedValue<number>;
       // Function to actually render the content of the pager
       // The parent component takes care of rendering
       render: (children: React.ReactNode) => React.ReactNode;
@@ -43,7 +50,6 @@ type Props<T extends Route> = PagerProps & {
 const DEAD_ZONE = 12;
 
 const DefaultTransitionSpec = {
-  timing: Animated.spring,
   stiffness: 1000,
   damping: 500,
   mass: 3,
@@ -52,7 +58,7 @@ const DefaultTransitionSpec = {
 
 export function PanResponderAdapter<T extends Route>({
   layout,
-  keyboardDismissMode = 'auto',
+  keyboardDismissMode = "auto",
   swipeEnabled = true,
   navigationState,
   onIndexChange,
@@ -62,11 +68,11 @@ export function PanResponderAdapter<T extends Route>({
   children,
   style,
   animationEnabled = false,
-  layoutDirection = 'ltr',
+  layoutDirection = "ltr",
 }: Props<T>) {
   const { routes, index } = navigationState;
 
-  const panX = useAnimatedValue(0);
+  const panX = useSharedValue(0);
 
   const listenersRef = React.useRef<Listener[]>([]);
 
@@ -84,25 +90,21 @@ export function PanResponderAdapter<T extends Route>({
     (index: number, animate = animationEnabled) => {
       const offset = -index * layoutRef.current.width;
 
-      const { timing, ...transitionConfig } = DefaultTransitionSpec;
-
       if (animate) {
-        Animated.parallel([
-          timing(panX, {
-            ...transitionConfig,
-            toValue: offset,
-            useNativeDriver: false,
-          }),
-        ]).start(({ finished }) => {
+        panX.value = withSpring(offset, DefaultTransitionSpec, (finished) => {
           if (finished) {
-            onIndexChangeRef.current(index);
-            onTabSelectRef.current?.({ index });
-            pendingIndexRef.current = undefined;
+            runOnJS(onIndexChangeRef.current)(index);
+            if (onTabSelectRef.current) {
+              runOnJS(onTabSelectRef.current)({ index });
+            }
+            runOnJS(() => {
+              pendingIndexRef.current = undefined;
+            })();
           }
         });
         pendingIndexRef.current = index;
       } else {
-        panX.setValue(offset);
+        panX.value = offset;
         onIndexChangeRef.current(index);
         onTabSelectRef.current?.({ index });
         pendingIndexRef.current = undefined;
@@ -120,11 +122,11 @@ export function PanResponderAdapter<T extends Route>({
   React.useEffect(() => {
     const offset = -navigationStateRef.current.index * layout.width;
 
-    panX.setValue(offset);
+    panX.value = offset;
   }, [layout.width, panX]);
 
   React.useEffect(() => {
-    if (keyboardDismissMode === 'auto') {
+    if (keyboardDismissMode === "auto") {
       Keyboard.dismiss();
     }
 
@@ -153,7 +155,7 @@ export function PanResponderAdapter<T extends Route>({
     }
 
     const diffX =
-      layoutDirection === 'rtl' ? -gestureState.dx : gestureState.dx;
+      layoutDirection === "rtl" ? -gestureState.dx : gestureState.dx;
 
     return (
       isMovingHorizontally(event, gestureState) &&
@@ -165,13 +167,13 @@ export function PanResponderAdapter<T extends Route>({
   const startGesture = () => {
     onSwipeStart?.();
 
-    if (keyboardDismissMode === 'on-drag') {
+    if (keyboardDismissMode === "on-drag") {
       Keyboard.dismiss();
     }
 
-    panX.stopAnimation();
-    // @ts-expect-error: _value is private, but docs use it as well
-    panX.setOffset(panX._value);
+    cancelAnimation(panX);
+    // // @ts-expect-error: _value is private, but docs use it as well
+    // panX.setOffset(panX._value);
   };
 
   const respondToGesture = (
@@ -179,7 +181,7 @@ export function PanResponderAdapter<T extends Route>({
     gestureState: PanResponderGestureState
   ) => {
     const diffX =
-      layoutDirection === 'rtl' ? -gestureState.dx : gestureState.dx;
+      layoutDirection === "rtl" ? -gestureState.dx : gestureState.dx;
 
     if (
       // swiping left
@@ -201,19 +203,19 @@ export function PanResponderAdapter<T extends Route>({
       }
     }
 
-    panX.setValue(diffX);
+    panX.value = diffX;
   };
 
   const finishGesture = (
     _: GestureResponderEvent,
     gestureState: PanResponderGestureState
   ) => {
-    panX.flattenOffset();
+    // panX.flattenOffset();
 
     onSwipeEnd?.();
 
     const currentIndex =
-      typeof pendingIndexRef.current === 'number'
+      typeof pendingIndexRef.current === "number"
         ? pendingIndexRef.current
         : currentIndexRef.current;
 
@@ -229,7 +231,7 @@ export function PanResponderAdapter<T extends Route>({
         Math.min(
           Math.max(
             0,
-            layoutDirection === 'rtl'
+            layoutDirection === "rtl"
               ? currentIndex + gestureState.dx / Math.abs(gestureState.dx)
               : currentIndex - gestureState.dx / Math.abs(gestureState.dx)
           ),
@@ -279,22 +281,36 @@ export function PanResponderAdapter<T extends Route>({
   });
 
   const maxTranslate = layout.width * (routes.length - 1);
-  const translateX = Animated.multiply(
-    panX.interpolate({
-      inputRange: [-maxTranslate, 0],
-      outputRange: [-maxTranslate, 0],
-      extrapolate: 'clamp',
-    }),
-    layoutDirection === 'rtl' ? -1 : 1
-  );
+  // const translateX = Animated.multiply(
+  //   panX.interpolate({
+  //     inputRange: [-maxTranslate, 0],
+  //     outputRange: [-maxTranslate, 0],
+  //     extrapolate: "clamp",
+  //   }),
+  //   layoutDirection === "rtl" ? -1 : 1
+  // );
 
-  const position = React.useMemo(
-    () => (layout.width ? Animated.divide(panX, -layout.width) : null),
-    [layout.width, panX]
-  );
+  const translateX = useDerivedValue(() => {
+    const interpolatedValue = interpolate(
+      panX.value,
+      [-maxTranslate, 0],
+      [-maxTranslate, 0],
+      "clamp"
+    );
+
+    return layoutDirection === "rtl" ? -interpolatedValue : interpolatedValue;
+  });
+
+  // const position = React.useMemo(
+  //   () => (layout.width ? Animated.divide(panX, -layout.width) : null),
+  //   [layout.width, panX]
+  // );
+  const position = useDerivedValue(() => {
+    return layout.width ? panX.value / -layout.width : index;
+  });
 
   return children({
-    position: position ?? new Animated.Value(index),
+    position,
     addEnterListener,
     jumpTo,
     render: (children) => (
@@ -317,13 +333,13 @@ export function PanResponderAdapter<T extends Route>({
 
           return (
             <View
-              key={route.key}
+              key={route?.key}
               style={
                 layout.width
                   ? { width: layout.width }
                   : focused
-                    ? StyleSheet.absoluteFill
-                    : null
+                  ? StyleSheet.absoluteFill
+                  : null
               }
             >
               {focused || layout.width ? child : null}
@@ -338,7 +354,7 @@ export function PanResponderAdapter<T extends Route>({
 const styles = StyleSheet.create({
   sheet: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'stretch',
+    flexDirection: "row",
+    alignItems: "stretch",
   },
 });

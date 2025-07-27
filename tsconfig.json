@@ -1,9 +1,30 @@
 {
-  "extends": "../../tsconfig",
   "references": [],
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "./lib/typescript",
-    "jsx": "react"
+    "jsx": "react",
+    "lib": ["dom", "es2015", "esnext"],
+    "baseUrl": "./",
+    "paths": {
+      "react-native-pager-view": ["./src/index"]
+    },
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noImplicitUseStrict": false,
+    "noStrictGenericChecks": false,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "esnext"
   }
 }

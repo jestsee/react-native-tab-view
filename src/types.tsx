@@ -1,5 +1,6 @@
-import type { Animated, StyleProp, TextStyle, ViewStyle } from 'react-native';
+import type { StyleProp, TextStyle, ViewStyle } from 'react-native';
 import type { PagerViewProps } from 'react-native-pager-view';
+import { SharedValue } from 'react-native-reanimated';
 
 export type TabDescriptor<T extends Route> = {
   accessibilityLabel?: string;
@@ -61,7 +62,7 @@ export type Listener = (value: number) => void;
 
 export type SceneRendererProps = {
   layout: Layout;
-  position: Animated.AnimatedInterpolation<number>;
+  position: SharedValue<number>;
   jumpTo: (key: string) => void;
 };
 
