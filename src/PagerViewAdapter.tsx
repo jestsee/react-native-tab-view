@@ -109,17 +109,17 @@ export function PagerViewAdapter<T extends Route>({
         onSwipeEnd?.();
         return;
       case "dragging": {
-        const listenerId = 1;
-        offset.addListener(listenerId, (value) => {
-          const next =
-            index + (value > 0 ? Math.ceil(value) : Math.floor(value));
+        // const listenerId = 1;
+        // offset.addListener(listenerId, (value) => {
+        //   const next =
+        //     index + (value > 0 ? Math.ceil(value) : Math.floor(value));
 
-          if (next !== index) {
-            listenersRef.current.forEach((listener) => listener(next));
-          }
+        //   if (next !== index) {
+        //     listenersRef.current.forEach((listener) => listener(next));
+        //   }
 
-          offset.removeListener(listenerId);
-        });
+        //   offset.removeListener(listenerId);
+        // });
 
         onSwipeStart?.();
         return;
@@ -130,6 +130,9 @@ export function PagerViewAdapter<T extends Route>({
   const pageScrollHandler = usePageScrollHandler({
     onPageScroll: (e) => {
       "worklet";
+      // @ts-ignore
+      if (e.offset === 0) return; 
+      
       // @ts-ignore
       offset.value = e.offset;
       // console.log(e.offset, e.position);

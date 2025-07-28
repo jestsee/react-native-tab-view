@@ -110,14 +110,18 @@ export function TabBarIndicator<T extends Route>({
 
   const { routes } = navigationState;
 
+  const { inputRange, outputRange } = getTranslateXRange(
+    routes,
+    getTabWidth,
+    gap,
+    width
+  );
+
+  // const inputRangeScaleX = routes.map((_, i) => i);
+  // const outputRangeScaleX = inputRange.map(getTabWidth);
+
   // @ts-ignore
   const animatedStyle = useAnimatedStyle(() => {
-    const { inputRange, outputRange } = getTranslateXRange(
-      routes,
-      getTabWidth,
-      gap,
-      width
-    );
 
     const interpolatedTranslateX = interpolate(
       position.value,
@@ -131,24 +135,22 @@ export function TabBarIndicator<T extends Route>({
         ? interpolatedTranslateX * (direction === "rtl" ? -1 : 1)
         : 0;
 
-    const inputRangeScaleX = routes.map((_, i) => i);
-    const outputRangeScaleX = inputRange.map(getTabWidth);
 
-    const scaleX =
-      routes.length > 1
-        ? interpolate(
-            position.value,
-            inputRangeScaleX,
-            outputRangeScaleX,
-            "clamp"
-          )
-        : outputRangeScaleX[0];
+    // const scaleX =
+    //   routes.length > 1
+    //     ? interpolate(
+    //         position.value,
+    //         inputRangeScaleX,
+    //         outputRangeScaleX,
+    //         "clamp"
+    //       )
+    //     : outputRangeScaleX[0];
 
     return {
       transform: [
         { translateX },
-        { scaleX },
-        { translateX: direction === "rtl" ? -0.5 : 0.5 },
+        // { scaleX },
+        // { translateX: direction === "rtl" ? -0.5 : 0.5 },
       ],
     };
   });
@@ -166,7 +168,7 @@ export function TabBarIndicator<T extends Route>({
       style={[
         styles.indicator,
         styleList,
-        width === "auto" ? { opacity: opacity } : null,
+        width === "auto" ? { opacity } : null,
         style,
       ]}
     >
