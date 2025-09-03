@@ -117,8 +117,8 @@ export function TabBarIndicator<T extends Route>({
     width
   );
 
-  // const inputRangeScaleX = routes.map((_, i) => i);
-  // const outputRangeScaleX = inputRange.map(getTabWidth);
+  const inputRangeScaleX = routes.map((_, i) => i);
+  const outputRangeScaleX = inputRange.map(getTabWidth);
 
   // @ts-ignore
   const animatedStyle = useAnimatedStyle(() => {
@@ -136,21 +136,20 @@ export function TabBarIndicator<T extends Route>({
         : 0;
 
 
-    // const scaleX =
-    //   routes.length > 1
-    //     ? interpolate(
-    //         position.value,
-    //         inputRangeScaleX,
-    //         outputRangeScaleX,
-    //         "clamp"
-    //       )
-    //     : outputRangeScaleX[0];
+    const scaleX =
+      routes.length > 1
+        ? interpolate(
+            position.value,
+            inputRangeScaleX,
+            outputRangeScaleX,
+            "clamp"
+          )
+        : outputRangeScaleX[0];
 
     return {
       transform: [
         { translateX },
-        // { scaleX },
-        // { translateX: direction === "rtl" ? -0.5 : 0.5 },
+        ...(isWidthDynamic ? [{ scaleX }, { translateX: direction === "rtl" ? -0.5 : 0.5 }] : [])
       ],
     };
   });
