@@ -1,5 +1,5 @@
 import * as React from "react";
-import { type LayoutChangeEvent, type PressableAndroidRippleConfig, type StyleProp, type ViewStyle } from "react-native";
+import { type Insets, type LayoutChangeEvent, type PressableAndroidRippleConfig, type StyleProp, type ViewStyle } from "react-native";
 import type { NavigationState, Route, TabDescriptor } from "./types";
 import { SharedValue } from "react-native-reanimated";
 export type Props<T extends Route> = TabDescriptor<T> & {
@@ -16,6 +16,7 @@ export type Props<T extends Route> = TabDescriptor<T> & {
     defaultTabWidth?: number;
     style: StyleProp<ViewStyle>;
     android_ripple?: PressableAndroidRippleConfig;
+    hitSlop?: number | Insets;
 };
 export declare function TabBarItem<T extends Route>(props: Props<T>): React.JSX.Element;
 //# sourceMappingURL=TabBarItem.d.ts.map

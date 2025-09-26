@@ -1,5 +1,6 @@
 import * as React from "react";
 import {
+  Insets,
   type LayoutChangeEvent,
   Platform,
   type PressableAndroidRippleConfig,
@@ -33,6 +34,7 @@ export type Props<T extends Route> = TabDescriptor<T> & {
   defaultTabWidth?: number;
   style: StyleProp<ViewStyle>;
   android_ripple?: PressableAndroidRippleConfig;
+  hitSlop?: number | Insets;
 };
 
 const DEFAULT_ACTIVE_COLOR = "rgba(255, 255, 255, 1)";
@@ -81,6 +83,7 @@ const TabBarItemInternal = <T extends Route>({
   android_ripple = ANDROID_RIPPLE_DEFAULT,
   labelAllowFontScaling,
   route,
+  hitSlop
 }: TabBarItemInternalProps<T>) => {
   const labelColorFromStyle = StyleSheet.flatten(labelStyle || {}).color;
 
@@ -214,6 +217,7 @@ const TabBarItemInternal = <T extends Route>({
       onLongPress={onLongPress}
       href={href}
       style={[styles.pressable, tabContainerStyle]}
+      hitSlop={hitSlop}
     >
       <View pointerEvents="none" style={[styles.item, tabStyle]}>
         {icon}
